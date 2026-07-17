@@ -38,6 +38,8 @@ export interface CourseCardProps {
   onCardClick?: () => void;
   footerAction: CourseCardFooterAction;
   className?: string;
+  hideMeta?: boolean;
+  hideEnrollmentLabel?: boolean;
 }
 
 function FooterActionButton({ action, t }: { action: CourseCardFooterAction; t: (key: TranslationKeys) => string }) {
@@ -107,19 +109,29 @@ export function CourseCard({
   onCardClick,
   footerAction,
   className,
+  hideMeta,
+  hideEnrollmentLabel,
 }: CourseCardProps) {
   const { t, language } = useLanguage();
 
-  const metaText = [
-    totalChapters != null ? (language === "en" ? `${totalChapters} ch` : `챕터 ${totalChapters}`) : null,
-    totalCards != null ? (language === "en" ? `${totalCards} cards` : `카드 ${totalCards}`) : null,
-    license || null,
-    targetAge ? formatTargetAge(targetAge, language) : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const metaText = hideMeta
+    ? ""
+    : [
+        totalChapters != null ? (language === "en" ? `${totalChapters} ch` : `챕터 ${totalChapters}`) : null,
+        totalCards != null ? (language === "en" ? `${totalCards} cards` : `카드 ${totalCards}`) : null,
+        license || null,
+        targetAge ? formatTargetAge(targetAge, language) : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
-  const enrollmentLabel = enrollmentStatus === "enrolled" ? t("statusEnrolled") : enrollmentStatus === "completed" ? t("completed") : "";
+  const enrollmentLabel = hideEnrollmentLabel
+    ? ""
+    : enrollmentStatus === "enrolled"
+      ? t("statusEnrolled")
+      : enrollmentStatus === "completed"
+        ? t("completed")
+        : "";
 
   return (
     <Card className={cn("overflow-hidden flex flex-col hover:border-primary/50 transition-all duration-300 bg-white py-0 pb-0", className)}>

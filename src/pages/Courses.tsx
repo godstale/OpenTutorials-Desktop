@@ -13,7 +13,7 @@ import { db, LOCAL_USER_ID } from "@/lib/db/client";
 import { importCourseBundle } from "@/lib/bundle/client";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import type { TocNode } from "@/lib/types/course";
-import { countChapters, isVersionNewer } from "@/lib/utils/course";
+import { countChapters, isVersionNewer, countCardsFromToc } from "@/lib/utils/course";
 
 const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/";
 const GITHUB_REPO_URL = "https://github.com/godstale/OpenTutorials-Browser";
@@ -306,10 +306,24 @@ export default function Courses() {
                 agentName={null}
                 author={author}
                 progressPercent={null}
-                totalChapters={localCourse?.toc ? countChapters(localCourse.toc) : null}
-                totalCards={localCourse?.cards ? localCourse.cards.length : null}
-                license={null}
-                targetAge={course.target_age || null}
+                totalChapters={
+                  course.toc && course.toc.length > 0
+                    ? countChapters(course.toc)
+                    : localCourse?.toc
+                      ? countChapters(localCourse.toc)
+                      : null
+                }
+                totalCards={
+                  localCourse?.cards
+                    ? localCourse.cards.length
+                    : course.toc && course.toc.length > 0
+                      ? countCardsFromToc(course.toc)
+                      : localCourse?.toc
+                        ? countCardsFromToc(localCourse.toc)
+                        : null
+                }
+                license={course.license || localCourse?.license || null}
+                targetAge={course.target_age || localCourse?.target_age || null}
                 enrollmentStatus={enrolled ? "enrolled" : null}
                 onCardClick={() => {
                   setSelectedCourse(course);

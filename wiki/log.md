@@ -1,3 +1,32 @@
+## [2026-07-17] feat | 원격 강좌 카드 메타 정보(챕터·카드·라이선스·연령) 동적 바인딩 및 프로토콜 분석
+
+### 작업 내용
+- **프로토콜 검토**: 강좌 검색 화면의 상세 정보 팝업에 미설치 강좌의 커리큘럼(TOC)이 보이지 않는 원인 분석. 피드(`courses.json`)에 데이터가 누락되었음을 파악하고, 프로토콜 수정 대신 원격 피드에 `toc`를 임베딩하는 방식(대안 1)을 권장(사용자가 원격 저장소에서 데이터 업데이트 완료).
+- **강좌 카드 메타 정보 바인딩**: 강좌 검색 화면(`Courses.tsx`)의 강좌 카드(`CourseCard`)에 원격 피드(`courses.json`)의 `toc`를 기반으로 총 챕터 수(`totalChapters`)와 총 카드 수(`totalCards`)를 계산하여 표시하도록 수정.
+- **카드 수 계산 헬퍼 추가**: `toc` 트리 구조로부터 단말 노드(카드 파일) 개수를 재귀적으로 세어주는 `countCardsFromToc` 헬퍼 함수를 추가하고 `src/lib/utils/course.ts`에서 export함.
+- **라이선스 및 권장 연령 노출**: `CourseCard`의 `license` 및 `targetAge` 프로퍼티에도 `course` 피드 데이터를 바인딩하여 카탈로그 카드에서 전체 메타 정보가 보이도록 개선.
+
+### 변경된 파일
+- `src/lib/utils/course.ts`
+- `src/pages/Courses.tsx`
+
+---
+
+## [2026-07-17] release | v0.3.2 버전 릴리즈 처리 (Changelog 작성, package.json / Cargo.toml / tauri.conf.json 버전 범프 및 코스 카드 메타 숨김 처리)
+
+### 작업 내용
+- 패키지 버전을 v0.3.2로 범프하고 변경 이력 관리를 위해 `CHANGELOG.md` 파일 생성.
+- 대시보드와 내 강좌 화면에서 코스 카드의 메타 정보와 수강 신청 상태 라벨을 숨길 수 있는 `hideMeta` 및 `hideEnrollmentLabel` 속성을 `CourseCard` 컴포넌트에 추가하고, 각 페이지에 적용해 레이아웃을 간소화함.
+
+### 변경된 파일
+- `package.json`
+- `src-tauri/Cargo.toml`
+- `src-tauri/tauri.conf.json`
+- `src/components/features/CourseCard.tsx`
+- `src/pages/Dashboard.tsx`
+- `src/pages/MyCourses.tsx`
+- `CHANGELOG.md` (신규)
+
 ## [2026-07-17] chore | GitHub 원격 저장소 연결 및 파일 정리, 프로토콜 서브모듈 설정
 
 ### 작업 내용

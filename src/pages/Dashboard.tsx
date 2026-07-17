@@ -226,6 +226,8 @@ export default function Dashboard() {
                 license={item.license}
                 targetAge={item.targetAge}
                 enrollmentStatus="enrolled"
+                hideMeta
+                hideEnrollmentLabel
                 onCardClick={() => navigate(`/courses/${item.slug}`)}
                 footerAction={{ kind: "learn", onClick: () => navigate(`/learn/${item.slug}`) }}
               />

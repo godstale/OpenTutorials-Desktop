@@ -31,6 +31,11 @@ function countLeaves(node: TocNode): number {
   return node.children.reduce((sum, child) => sum + countLeaves(child), 0);
 }
 
+export function countCardsFromToc(toc?: TocNode[] | null): number {
+  if (!toc) return 0;
+  return toc.reduce((sum, node) => sum + countLeaves(node), 0);
+}
+
 /**
  * currentCardPosition은 last_card/max_card(카드 배열 내 1-based 진행 위치)를 그대로 받는다.
  * 각 챕터가 포함하는 리프 카드 수의 누적합 구간에 현재 위치가 속한 챕터를 찾아 x/y 챕터로 환산한다.
