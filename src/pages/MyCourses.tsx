@@ -239,6 +239,8 @@ export default function MyCourses() {
                       license={pkg.license}
                       targetAge={pkg.target_age}
                       enrollmentStatus="enrolled"
+                      hideMeta
+                      hideEnrollmentLabel
                       onCardClick={() => navigate(`/courses/${pkg.slug}`)}
                       footerAction={{ kind: "learn", onClick: () => navigate(getPackageTargetUrl(sub.package_id, pkg.slug)) }}
                     />
@@ -284,6 +286,8 @@ export default function MyCourses() {
                       license={pkg.license}
                       targetAge={pkg.target_age}
                       enrollmentStatus="completed"
+                      hideMeta
+                      hideEnrollmentLabel
                       onCardClick={() => navigate(`/courses/${pkg.slug}`)}
                       footerAction={{ kind: "learn", onClick: () => navigate(`/learn/${pkg.slug}`) }}
                     />
