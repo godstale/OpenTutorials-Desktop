@@ -47,13 +47,17 @@ pnpm tauri dev     # Rust + Vite dev 서버를 함께 실행하는 네이티브 
 ## 빌드 및 배포
 
 ### 1. 로컬 빌드
-각 OS 환경에서 아래 명령어를 실행하면 OS에 맞는 배포용 실행 파일이 생성됩니다.
+각 OS 환경에서 아래 명령어를 실행하면 배포용 실행 파일 빌드 및 루트 `release/` 폴더로의 복사가 자동으로 수행됩니다.
 ```bash
-# 프론트엔드 빌드 후 Tauri 네이티브 패키지 생성
+# 프론트엔드 빌드 후 Tauri 네이티브 패키지 생성 및 실행 파일 복사 자동화
 pnpm tauri build
 ```
-* **Windows**: `src-tauri/target/release/bundle/msi/` 및 `nsis/` 디렉토리에 설치 파일(`.msi`, `.exe`)이 생성됩니다.
-* **macOS**: `src-tauri/target/release/bundle/dmg/` 디렉토리에 설치 파일(`.dmg`)이 생성됩니다. (Apple Silicon 및 Intel 유니버설 빌드를 위해서는 `pnpm tauri build --target universal-apple-darwin`를 사용할 수 있습니다.)
+* **빌드 결과 자동 복사 및 Git 스테이징**:
+  * 빌드가 완료되면 프로젝트 루트 하위의 **`release/`** 디렉토리에 **`OpenTutorials-v[버전].exe`** (macOS의 경우 `OpenTutorials-v[버전]`) 형식으로 실행 파일이 자동 복사 및 이름 변경됩니다.
+  * 복사된 실행 파일은 Git 레포지토리에 원활히 업데이트될 수 있도록 **Git staging area (`git add`)에 자동으로 등록**됩니다.
+* **Tauri 원본 패키지 경로**:
+  * **Windows**: `src-tauri/target/release/bundle/msi/` 및 `nsis/` 디렉토리에 설치 파일(`.msi`, `.exe`)이 생성됩니다.
+  * **macOS**: `src-tauri/target/release/bundle/dmg/` 디렉토리에 설치 파일(`.dmg`)이 생성됩니다. (Apple Silicon 및 Intel 유니버설 빌드를 위해서는 `pnpm tauri build --target universal-apple-darwin`를 사용할 수 있습니다.)
 
 ### 2. GitHub Actions 자동 빌드 (추천)
 프로젝트에는 GitHub Actions 워크플로우([release.yml](file:///.github/workflows/release.yml))가 구성되어 있습니다. 새 버전을 출시하려면 다음과 같이 Git 태그를 푸시합니다:

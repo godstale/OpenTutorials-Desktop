@@ -8,11 +8,14 @@
 - **CommonJS 호환성 및 스크립트 맵 연동**:
   - 프로젝트 내 `"type": "module"` 선언으로 인한 `require` 에러를 방지하기 위해 후처리 관련 코드 확장자를 `.cjs`로 구성했습니다.
   - `package.json`의 `"tauri"` 실행 스크립트가 해당 래퍼 스크립트를 경유하도록 경로 설정을 변경하여 사용자가 기존 개발 프로세스(`pnpm tauri build`, `pnpm tauri dev` 등)를 그대로 유지하더라도 빌드 후처리가 유기적으로 작동하도록 연동했습니다.
+- **`README.md` 내 로컬 빌드 후처리 자동화 및 release/ 폴더 안내 추가**:
+  - 로컬에서 빌드 수행 시 루트 `release/` 폴더에 `OpenTutorials-v[버전].exe` 형식으로 파일이 복사 및 자동 Git 스테이징된다는 명확한 정보를 `README.md`에 추가하여 사용자 및 작업자의 혼동을 방지했습니다.
 
 ### 변경된 파일
 - [package.json](file:///package.json)
 - [scripts/tauri-wrapper.cjs](file:///scripts/tauri-wrapper.cjs)
 - [scripts/post-build.cjs](file:///scripts/post-build.cjs)
+- [README.md](file:///README.md)
 
 ---
 
