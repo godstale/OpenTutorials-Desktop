@@ -1,3 +1,34 @@
+## [2026-07-18] release | v0.3.6 버전 릴리즈 처리 및 패치 빌드 적용
+
+### 작업 내용
+- **패키지 버전 범프 및 릴리즈 준비**:
+  - `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`의 버전을 `0.3.6`으로 업데이트했습니다.
+  - 패치 버전을 릴리즈하기 위해 빌드를 수행하고, 이에 따른 `CHANGELOG.md` 및 `wiki/log.md` 히스토리를 갱신했습니다.
+
+### 변경된 파일
+- `package.json`
+- `src-tauri/Cargo.toml`
+- `src-tauri/tauri.conf.json`
+- `CHANGELOG.md`
+- `wiki/log.md`
+
+---
+
+## [2026-07-18] fix | 강좌 학습 화면 이탈, 카드 변경, 대화 삭제 시 DB 대화 기록 초기화 연동
+
+### 작업 내용
+- **강좌 학습 화면(`Learn.tsx`) 내 DB 대화 기록 초기화 구현**:
+  - 강좌 학습 중 AI 튜터와 대화할 때 이전 학습 카드나 세션의 대화 내역이 Rust 백엔드의 DB(`user_external_agent_messages`)에 계속 누적되어 프롬프트가 과도하게 길어지는 문제를 해결하기 위해, 다음 세 가지 시점에 DB에 저장된 대화 내역을 비우도록 연동했습니다:
+    1. **카드 변경/튜터 변경/강좌 변경 시**: 학습 카드 인덱스(`currentCardIndex`)나 튜터 에이전트 ID(`agentId`)가 바뀌거나, 강좌 타이틀이 변경될 때 이전 대화 기록을 DB에서 삭제.
+    2. **학습 화면 이탈 시 (컴포넌트 언마운트)**: 사용자가 학습 화면을 벗어날 때(cleanup 훅) 해당 에이전트의 대화 기록을 DB에서 삭제.
+    3. **대화 내역 명시적 삭제 시 (`handleClearChat`)**: 사용자가 QnA 탭의 "대화 내역 삭제" 버튼을 눌렀을 때 DB 내 대화 기록도 연계해서 삭제.
+  - 타입 컴파일 오류를 예방하고 일관성을 보장하기 위해 `useCallback` 훅으로 감싸진 `clearDbMessages` 비동기 헬퍼 함수를 컴포넌트 내부에 추가하여 타입 안전한 DB 쿼리 실행(`db.from(...).delete().eq(...)`)을 하도록 리팩토링했습니다.
+
+### 변경된 파일
+- `src/pages/Learn.tsx`
+
+---
+
 ## [2026-07-18] feat | Tauri 로컬 빌드 후 자동 복사 및 Git 업로드 프로세스 구축
 
 ### 작업 내용

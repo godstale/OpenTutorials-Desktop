@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import ReactPlayer from "react-player";
@@ -440,6 +440,14 @@ export default function Learn() {
   const [agentType, setAgentType] = useState<"harness" | "llm">("harness");
   const [wikiContent, setWikiContent] = useState<string>("");
 
+  const clearDbMessages = useCallback(async (id: string) => {
+    try {
+      await db.from("user_external_agent_messages").delete().eq("agent_id", id);
+    } catch (err) {
+      console.error("Failed to clear DB messages:", err);
+    }
+  }, []);
+
   // Minimize the global app sidebar while on the learn screen — this page has its own TOC panel.
   // Remember whatever state it was in beforehand so leaving this screen restores it.
   const sidebarOpenBeforeLearn = useRef(sidebarOpen);
@@ -624,8 +632,21 @@ export default function Learn() {
       },
     ]);
     setPromptUsage(null);
+
+    if (agentId) {
+      clearDbMessages(agentId);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCardIndex, agentId, course?.title]);
+
+  // Clean up database chat history when leaving the learn page (unmounting)
+  useEffect(() => {
+    return () => {
+      if (agentId) {
+        clearDbMessages(agentId);
+      }
+    };
+  }, [agentId, clearDbMessages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -907,6 +928,10 @@ export default function Learn() {
       },
     ]);
     setPromptUsage(null);
+
+    if (agentId) {
+      clearDbMessages(agentId);
+    }
   };
 
   const handleCopyMessage = async (id: string, text: string) => {
