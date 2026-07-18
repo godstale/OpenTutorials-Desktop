@@ -1,3 +1,20 @@
+## [2026-07-18] release | OpenTutorials Desktop 빌드 자동화(GitHub Actions) 및 README.md 내 배포 가이드 보강
+
+### 작업 내용
+- **GitHub Actions 빌드 워크플로우 구성 (`.github/workflows/release.yml`)**:
+  - `v*` 태그 푸시 시 또는 수동 실행 시 Windows 및 macOS용 실행 파일을 자동으로 빌드하는 CI/CD 워크플로우를 신설했습니다.
+  - `tauri-apps/tauri-action`을 활용해 Windows(`windows-latest`) 빌드와 macOS(`macos-latest`, `universal-apple-darwin` 타겟을 통한 M1/Intel 유니버셜 바이너리 지원) 빌드를 병렬로 수행하며, 완료 시 GitHub Releases에 초안(Draft) 릴리즈 및 빌드된 바이너리를 자동으로 자동 업로드하도록 설정했습니다.
+- **`README.md` 내 사용자 가이드 및 빌드 문서 보강**:
+  - 로컬 환경에서의 빌드 명령어 및 산출물 파일 경로에 대한 설명을 추가했습니다.
+  - GitHub Actions를 사용해 원격에서 릴리즈 빌드를 트리거하는 방법(`git tag` + `git push`)을 추가했습니다.
+  - 코드 서명(Code Signing)이 생략된 개발자 배포본의 특성 상 발생할 수 있는 OS별 보안 차단 경고를 우회하여 실행하는 방법(Windows SmartScreen 우회, macOS Gatekeeper 우회)을 친절하게 기술해 배포 후 사용자의 접근성을 대폭 개선했습니다.
+
+### 변경된 파일
+- [.github/workflows/release.yml](file:///.github/workflows/release.yml)
+- [README.md](file:///README.md)
+
+---
+
 ## [2026-07-18] fix | 에이전트 추가/삭제 시 기본 튜터 항상 유지 및 신규 강좌 추가 시 기본 튜터 자동 할당 개선
 
 ### 작업 내용

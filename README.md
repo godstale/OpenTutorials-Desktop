@@ -44,11 +44,47 @@ pnpm tauri dev     # Rust + Vite dev 서버를 함께 실행하는 네이티브 
 ```
 `pnpm dev`로 Vite 개발 서버만(포트 1420) 띄워 브라우저에서 UI만 미리 볼 수도 있지만, 이 경우 Tauri IPC(`invoke()`) 호출은 동작하지 않습니다.
 
-## 빌드
+## 빌드 및 배포
+
+### 1. 로컬 빌드
+각 OS 환경에서 아래 명령어를 실행하면 OS에 맞는 배포용 실행 파일이 생성됩니다.
 ```bash
-pnpm build         # tsc && vite build → dist/
-pnpm tauri build   # 배포용 네이티브 바이너리/설치 파일 생성
+# 프론트엔드 빌드 후 Tauri 네이티브 패키지 생성
+pnpm tauri build
 ```
+* **Windows**: `src-tauri/target/release/bundle/msi/` 및 `nsis/` 디렉토리에 설치 파일(`.msi`, `.exe`)이 생성됩니다.
+* **macOS**: `src-tauri/target/release/bundle/dmg/` 디렉토리에 설치 파일(`.dmg`)이 생성됩니다. (Apple Silicon 및 Intel 유니버설 빌드를 위해서는 `pnpm tauri build --target universal-apple-darwin`를 사용할 수 있습니다.)
+
+### 2. GitHub Actions 자동 빌드 (추천)
+프로젝트에는 GitHub Actions 워크플로우([release.yml](file:///.github/workflows/release.yml))가 구성되어 있습니다. 새 버전을 출시하려면 다음과 같이 Git 태그를 푸시합니다:
+```bash
+# 예시: v0.3.5 버전 태그 생성 및 푸시
+git tag v0.3.5
+git push origin v0.3.5
+```
+태그가 푸시되면 GitHub Actions가 실행되어 **Windows 및 macOS(Universal)용 실행 파일**을 빌드하고, GitHub Repository의 **Releases** 페이지에 초안(Draft Release)으로 자동 등록합니다.
+
+---
+
+## 사용자 실행 가이드 (보안 경고 우회)
+
+코드 서명(Code Signing)이 적용되지 않은 개발용 빌드이기 때문에, 최초 실행 시 OS 보안 경고가 발생할 수 있습니다. 아래 안내에 따라 실행해 주십시오.
+
+### 윈도우 (Windows) 사용자
+1. 다운로드한 `.exe` 또는 `.msi` 설치 파일을 실행합니다.
+2. **"Windows의 PC 보호"** (SmartScreen) 파란색 경고 창이 나타나면 **[추가 정보]** 링크를 클릭합니다.
+3. 나타나는 **[실행]** 버튼을 클릭하여 설치 및 실행을 완료합니다.
+
+### 맥 (macOS) 사용자
+1. 다운로드한 `.dmg` 파일을 열고 `OpenTutorials` 앱을 **응용 프로그램 (Applications)** 폴더로 드래그합니다.
+2. 최초 실행 시 **"확인되지 않은 개발자가 등록한 앱이기 때문에 열 수 없습니다"**라는 경고 팝업이 뜹니다.
+3. **우회 방법 A (추천)**:
+   * **응용 프로그램** 폴더로 이동합니다.
+   * `OpenTutorials` 앱 아이콘을 마우스 우클릭(또는 `Control` 키를 누른 채 클릭)하고 **[열기]**를 선택합니다.
+   * 경고 창에서 다시 한 번 **[열기]**를 클릭하면 이후부터는 정상적으로 실행됩니다.
+4. **우회 방법 B (시스템 설정)**:
+   * 경고 창을 닫은 뒤, macOS **[시스템 설정] -> [개인정보 보호 및 보안]**으로 이동합니다.
+   * 보안 섹션에 나타난 **"확인 없이 열기 (Open Anyway)"** 버튼을 클릭하고 비밀번호/Touch ID 인증을 완료합니다.
 
 ## 테스트
 ```bash
