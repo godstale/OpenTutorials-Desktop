@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.5] - 2026-07-18
+
+### Added
+- 에이전트 신규 등록 시, 기본 튜터가 없을 경우 첫 번째 에이전트를 기본 튜터로 자동 지정
+- 에이전트 삭제 시, 기존 기본 튜터가 삭제되는 경우 남아있는 에이전트 중 첫 번째를 기본 튜터로 자동 지정
+- 신규 강좌 임포트 시, 데이터베이스에 기본 튜터가 설정되어 있다면 자동으로 해당 튜터를 강좌의 `agent_id`로 자동 할당 (기존 지정된 튜터가 있다면 유지)
+
+### Changed
+- 패키지 버전 범프 (`package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`) to `0.3.5`
+- 에이전트 수동 변경 시 최소 1개의 기본 튜터 지정을 보장하도록 해제 제한 설정 (유일한 기본 튜터 해제 시도 시 에러 발생 및 UI 상 메뉴 비활성화 처리)
+
 ## [0.3.4] - 2026-07-18
 
 ### Changed

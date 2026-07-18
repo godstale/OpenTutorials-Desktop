@@ -529,7 +529,10 @@ export default function Agents() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleSetDefaultTutor(agent.id, !!agent.is_ai_tutor)}>
+                      <DropdownMenuItem
+                        disabled={agent.is_ai_tutor && agents.filter((a) => a.is_ai_tutor === true).length <= 1}
+                        onClick={() => handleSetDefaultTutor(agent.id, !!agent.is_ai_tutor)}
+                      >
                         {agent.is_ai_tutor ? t("agentUnsetDefaultTutor") : t("agentSetDefaultTutor")}
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setAgentToDelete(agent)}>
