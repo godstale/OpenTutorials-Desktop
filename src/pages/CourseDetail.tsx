@@ -24,7 +24,9 @@ import { importCourseBundle } from "@/lib/bundle/client";
 import { getAgentChatLogs } from "@/lib/agent/client";
 import type { UserExternalAgent } from "@/lib/types";
 import { useLanguage } from "@/lib/context/LanguageContext";
+import type { TranslationKeys } from "@/lib/locales/ko";
 import { ROUTES } from "@/lib/constants/routes";
+import { formatTotalDuration, formatAvgResponse, formatTargetAge, isVersionNewer } from "@/lib/utils/course";
 
 const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/";
 
@@ -66,27 +68,10 @@ interface UserProgress {
   completed: boolean;
 }
 
-const formatTargetAge = (targetAge: string, language: string) => {
-  if (targetAge === "all") return language === "en" ? "All Ages" : "전연령";
-  return language === "en" ? `${targetAge} years old` : `${targetAge}세`;
-};
 
-const isVersionNewer = (local: string, online: string) => {
-  if (!local || !online) return false;
-  const parseVersion = (v: string) => v.replace(/^v/, "").split(".").map(Number);
-  const localParts = parseVersion(local);
-  const onlineParts = parseVersion(online);
-  for (let i = 0; i < Math.max(localParts.length, onlineParts.length); i++) {
-    const l = localParts[i] || 0;
-    const o = onlineParts[i] || 0;
-    if (o > l) return true;
-    if (l > o) return false;
-  }
-  return false;
-};
 
 function AgentStatsView({ agentId }: { agentId: string }) {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [chatLogs, setChatLogs] = useState<{ duration_ms: number; input_token_size: number; output_token_size: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -111,30 +96,11 @@ function AgentStatsView({ agentId }: { agentId: string }) {
   const totalTokens = chatLogs.reduce((acc, log) => acc + (log.input_token_size || 0) + (log.output_token_size || 0), 0);
   const avgTokens = totalLogs > 0 ? Math.round(totalTokens / totalLogs) : 0;
 
-  const formatTotalDuration = (ms: number) => {
-    if (ms <= 0) return language === "en" ? "0s" : "0초";
-    const totalSeconds = ms / 1000;
-    if (totalSeconds < 60) return `${totalSeconds.toFixed(1)}${language === "en" ? "s" : "초"}`;
-    if (totalSeconds < 3600) {
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = Math.round(totalSeconds % 60);
-      return `${minutes}${language === "en" ? "m " : "분 "}${seconds}${language === "en" ? "s" : "초"}`;
-    }
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    return `${hours}${language === "en" ? "h " : "시간 "}${minutes}${language === "en" ? "m" : "분"}`;
-  };
-
-  const formatAvgResponse = (ms: number) => {
-    if (ms <= 0) return language === "en" ? "0s" : "0초";
-    return `${(ms / 1000).toFixed(1)}${language === "en" ? "s" : "초"}`;
-  };
-
   const stats = {
-    totalHours: formatTotalDuration(totalMs),
-    avgResponse: formatAvgResponse(avgMs),
-    totalTokens: `${totalTokens.toLocaleString()}${language === "en" ? " tokens" : " 토큰"}`,
-    avgTokens: `${avgTokens.toLocaleString()}${language === "en" ? " tokens" : " 토큰"}`,
+    totalHours: formatTotalDuration(totalMs, t),
+    avgResponse: formatAvgResponse(avgMs, t),
+    totalTokens: `${totalTokens.toLocaleString()} ${t("tokens")}`,
+    avgTokens: `${avgTokens.toLocaleString()} ${t("tokens")}`,
   };
 
   return (
@@ -274,7 +240,7 @@ export default function CourseDetail() {
 
       await fetchCourseDetail();
     } catch (err: any) {
-      alert((language === "en" ? "Failed to enroll: " : "수강 신청 중 오류가 발생했습니다: ") + err.message);
+      alert(t("errEnrollFailed") + err.message);
     } finally {
       setRegistering(false);
     }
@@ -287,62 +253,58 @@ export default function CourseDetail() {
       if (error) throw new Error(error.message);
       await fetchCourseDetail();
     } catch (err: any) {
-      alert((language === "en" ? "Failed to assign agent: " : "에이전트 지정에 실패했습니다: ") + err.message);
+      alert(t("errAssignAgentFailed") + err.message);
     }
   };
 
   const handleResetProgress = async () => {
     if (!pkg) return;
-    const confirmReset = window.confirm(
-      language === "en"
-        ? "Are you sure you want to reset your learning progress for this course? You will start learning from the beginning."
-        : "정말로 이 강좌의 학습 진도를 리셋하시겠습니까? 처음부터 다시 학습하게 됩니다.",
-    );
+    const confirmReset = window.confirm(t("confirmResetProgress"));
     if (!confirmReset) return;
 
     try {
       const { error } = await db.from("user_progress").delete().eq("user_id", LOCAL_USER_ID).eq("course_id", pkg.id);
       if (error) throw new Error(error.message);
-      alert(language === "en" ? "Learning progress reset successfully." : "학습 진도가 성공적으로 리셋되었습니다.");
+      alert(t("alertResetProgressSuccess"));
       await fetchCourseDetail();
     } catch (err: any) {
-      alert((language === "en" ? "Failed to reset progress: " : "진도 리셋에 실패했습니다: ") + err.message);
+      alert(t("errResetProgressFailed") + err.message);
     }
   };
 
   const handleUpdateCourse = async () => {
     if (!onlineCourseInfo) return;
     const confirmUpdate = window.confirm(
-      language === "en"
-        ? `Are you sure you want to update the course to the latest version (v${onlineCourseInfo.version})?\nYour learning progress will be preserved, but course content might change.`
-        : `강좌를 최신 버전(v${onlineCourseInfo.version})으로 업데이트하시겠습니까?\n기존 학습 진도율은 보존되지만, 강좌 콘텐츠가 변경될 수 있습니다.`,
+      t("lblConfirmUpdate")
+        .replace("{title}", onlineCourseInfo.title)
+        .replace("{version}", onlineCourseInfo.version)
     );
     if (!confirmUpdate) return;
 
     setUpdating(true);
     try {
       let downloadUrl = onlineCourseInfo.downloadUrl;
-      if (!downloadUrl) throw new Error(language === "en" ? "This course has no download URL." : "이 강좌에는 다운로드 주소가 없습니다.");
+      if (!downloadUrl) throw new Error(t("errNoDownloadUrl"));
       if (!downloadUrl.startsWith("http://") && !downloadUrl.startsWith("https://")) {
         downloadUrl = `${GITHUB_RAW_BASE}${downloadUrl}`;
       }
 
       const res = await fetch(downloadUrl);
-      if (!res.ok) throw new Error(language === "en" ? "Failed to download the course ZIP file." : "강좌 ZIP 파일을 다운로드하지 못했습니다.");
+      if (!res.ok) throw new Error(t("lblDownloadZipFailed"));
       const zipBlob = await res.blob();
 
       const { error: importErr } = await importCourseBundle(zipBlob, "GITHUB");
       if (importErr) throw new Error(importErr.message);
 
       alert(
-        language === "en"
-          ? `Course '${onlineCourseInfo.title}' updated successfully to v${onlineCourseInfo.version}!`
-          : `'${onlineCourseInfo.title}' 강좌가 v${onlineCourseInfo.version}(으)로 성공적으로 업데이트되었습니다!`,
+        t("alertUpdateSuccessWithVer")
+          .replace("{title}", onlineCourseInfo.title)
+          .replace("{version}", onlineCourseInfo.version)
       );
       setUpdateAvailable(false);
       await fetchCourseDetail();
     } catch (err: any) {
-      alert((language === "en" ? "An error occurred while updating the course: " : "강좌 업데이트 중 오류가 발생했습니다: ") + err.message);
+      alert(t("errUpdateCourseFailed") + err.message);
     } finally {
       setUpdating(false);
     }
@@ -365,7 +327,7 @@ export default function CourseDetail() {
     return (
       <div className="max-w-5xl mx-auto py-12 text-center">
         <h2 className="text-2xl font-bold mb-4">{t("lblNoCourseFound")}</h2>
-        <Button onClick={() => navigate(ROUTES.COURSES)}>{language === "en" ? "Go to Course List" : "전체 강좌 목록으로 이동"}</Button>
+        <Button onClick={() => navigate(ROUTES.COURSES)}>{t("lblGoToCourseList")}</Button>
       </div>
     );
   }
@@ -386,7 +348,7 @@ export default function CourseDetail() {
       <div>
         <Button variant="ghost" size="sm" onClick={() => navigate(ROUTES.COURSES)} className="gap-1 text-zinc-500 hover:text-zinc-950">
           <ArrowLeft className="w-4 h-4" />
-          {language === "en" ? "Back to list" : "전체 목록으로 돌아가기"}
+          {t("lblBackToList")}
         </Button>
       </div>
 
@@ -407,12 +369,12 @@ export default function CourseDetail() {
                 )}
                 {pkg.sequential_play && (
                   <Badge variant="outline" className="text-amber-600 border-amber-600 dark:text-amber-400">
-                    {language === "en" ? "Sequential Req." : "순차재생 필수"}
+                    {t("lblSequentialReq")}
                   </Badge>
                 )}
                 {pkg.force_checkpoint && (
                   <Badge variant="outline" className="text-rose-600 border-rose-600 dark:text-rose-400">
-                    {language === "en" ? "Checkpoint Req." : "체크포인트 강제"}
+                    {t("lblCheckpointReq")}
                   </Badge>
                 )}
               </div>
@@ -425,9 +387,10 @@ export default function CourseDetail() {
                 <div className="flex justify-between text-sm font-semibold text-zinc-700 dark:text-zinc-300">
                   <span>{t("learningProgress")}</span>
                   <span>
-                    {language === "en"
-                      ? `Completed ${completedSubcourses} of ${totalSubcourses} (${progressPercent}%)`
-                      : `총 ${totalSubcourses}개 중 ${completedSubcourses}개 완료 (${progressPercent}%)`}
+                    {t("lblCompletedCountDesc")
+                      .replace("{total}", String(totalSubcourses))
+                      .replace("{completed}", String(completedSubcourses))
+                      .replace("{percent}", String(progressPercent))}
                   </span>
                 </div>
                 <Progress value={progressPercent} className="h-2.5 bg-zinc-100 dark:bg-zinc-800" />
@@ -444,12 +407,12 @@ export default function CourseDetail() {
                   ) : (
                     <Button variant="outline" className="flex-1 border-green-600 text-green-700 hover:bg-green-50 dark:hover:bg-green-950/20 pointer-events-none gap-2">
                       <CheckCircle2 className="w-4 h-4" />
-                      {language === "en" ? "All lessons completed!" : "강좌 내 모든 학습 완료!"}
+                      {t("lblAllLessonsCompleted")}
                     </Button>
                   )}
                   <Button onClick={handleResetProgress} variant="destructive" className="gap-2 shrink-0 shadow-sm">
                     <RotateCcw className="w-4 h-4" />
-                    {language === "en" ? "Reset Progress" : "학습 진도율 리셋"}
+                    {t("lblResetProgress")}
                   </Button>
                   {updateAvailable && (
                     <Button
@@ -460,12 +423,12 @@ export default function CourseDetail() {
                       {updating ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>{language === "en" ? "Updating..." : "업데이트 중..."}</span>
+                          <span>{t("lblUpdatingEllipsis")}</span>
                         </>
                       ) : (
                         <>
                           <ArrowUpCircle className="w-4 h-4" />
-                          <span>{language === "en" ? `Update v${onlineCourseInfo?.version}` : `v${onlineCourseInfo?.version} 업데이트`}</span>
+                          <span>{t("lblUpdateVer").replace("{version}", onlineCourseInfo?.version || "")}</span>
                         </>
                       )}
                     </Button>
@@ -479,7 +442,7 @@ export default function CourseDetail() {
                   disabled={registering}
                   className="w-full md:w-auto px-8 bg-green-700 hover:bg-green-700 text-white font-semibold gap-2"
                 >
-                  {registering ? (language === "en" ? "Enrolling..." : "신청 중...") : t("btnEnroll")}
+                  {registering ? t("lblEnrollingEllipsis") : t("btnEnroll")}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
@@ -492,7 +455,7 @@ export default function CourseDetail() {
               <div className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400 font-medium">
                 <User className="w-3.5 h-3.5 text-zinc-400" />
                 <span>
-                  {language === "en" ? "Author: " : "저자: "}
+                  {t("lblAuthorPrefix")}
                   {pkg.author_nickname}
                 </span>
               </div>
@@ -500,18 +463,18 @@ export default function CourseDetail() {
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
               <span>
-                {language === "en" ? "Sequential: " : "순차학습: "}
+                {t("lblSequentialPrefix")}
                 <strong className={pkg.sequential_play ? "text-green-700 dark:text-green-300 font-semibold" : "text-zinc-600 dark:text-zinc-400 font-medium"}>
-                  {pkg.sequential_play ? (language === "en" ? "Required" : "필수") : language === "en" ? "Optional" : "선택"}
+                  {pkg.sequential_play ? t("lblRequired") : t("lblOptional")}
                 </strong>
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
               <span>
-                {language === "en" ? "Checkpoint: " : "체크포인트 강제: "}
+                {t("lblCheckpointPrefix")}
                 <strong className={pkg.force_checkpoint ? "text-rose-600 dark:text-rose-400 font-semibold" : "text-zinc-600 dark:text-zinc-400 font-medium"}>
-                  {pkg.force_checkpoint ? (language === "en" ? "Required" : "강제") : language === "en" ? "Skip Allowed" : "건너뛰기 가능"}
+                  {pkg.force_checkpoint ? t("lblCheckpointForceLabel") : t("lblSkipAllowed")}
                 </strong>
               </span>
             </div>
@@ -519,14 +482,14 @@ export default function CourseDetail() {
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
                 <span>
-                  {language === "en" ? "Age: " : "연령 제한: "}
-                  <strong className="text-zinc-600 dark:text-zinc-400 font-medium">{formatTargetAge(pkg.target_age, language)}</strong>
+                  {t("lblAgePrefix")}
+                  <strong className="text-zinc-600 dark:text-zinc-400 font-medium">{formatTargetAge(pkg.target_age, t)}</strong>
                 </span>
               </div>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-zinc-100 dark:border-zinc-800/50 pt-2 w-full">
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">{language === "en" ? "Tags:" : "태그:"}</span>
+            <span className="font-medium text-zinc-700 dark:text-zinc-300">{t("lblTagsPrefix")}</span>
             {pkg.tags && pkg.tags.length > 0 ? (
               pkg.tags.map((tag) => (
                 <Badge key={tag} variant="secondary" className="bg-zinc-100 text-zinc-600 dark:bg-zinc-850 dark:text-zinc-400 text-[11px] font-normal px-2 py-0.5">
@@ -534,7 +497,7 @@ export default function CourseDetail() {
                 </Badge>
               ))
             ) : (
-              <span className="text-zinc-400">{language === "en" ? "No tags registered" : "등록된 태그 없음"}</span>
+              <span className="text-zinc-400">{t("lblNoTagsRegistered")}</span>
             )}
           </div>
         </CardFooter>
@@ -545,12 +508,10 @@ export default function CourseDetail() {
           <CardHeader className="pb-3 px-6 md:px-8">
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <Bot className="w-5 h-5 text-green-700 dark:text-green-300" />
-              {language === "en" ? "AI Tutor Settings & Stats" : "학습 AI 튜터 설정 및 통계"}
+              {t("lblTutorSettingsStats")}
             </CardTitle>
             <CardDescription className="text-xs">
-              {language === "en"
-                ? "Assign an AI tutor agent for this course and monitor its stats."
-                : "이 강좌 전체에 적용될 AI 튜터 에이전트를 지정하고, 해당 에이전트의 수강 학습 통계를 모니터링합니다."}
+              {t("lblTutorSettingsStatsDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 px-6 md:px-8">
@@ -565,11 +526,11 @@ export default function CourseDetail() {
                   onChange={(e) => handleUpdatePackageAgent(e.target.value || null)}
                   className="text-sm bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded px-3 py-1.5 min-w-[200px] focus:outline-none shadow-sm cursor-pointer"
                 >
-                  <option value="">{language === "en" ? "No Tutor Assigned" : "튜터 미지정"}</option>
+                  <option value="">{t("lblNoTutorAssigned")}</option>
                   {externalAgents.map((agent) => (
                     <option key={agent.id} value={agent.id}>
                       {agent.name} ({agent.agent_type === "llm" ? "LLM" : "하네스"}
-                      {agent.is_ai_tutor ? (language === "en" ? " - Default" : " - 기본튜터") : ""})
+                      {agent.is_ai_tutor ? t("lblDefaultTutorSuffix") : ""})
                     </option>
                   ))}
                 </select>
@@ -580,7 +541,7 @@ export default function CourseDetail() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between text-xs border-b pb-2">
                   <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                    {language === "en" ? "Selected Agent Profile" : "선택된 에이전트 상세 프로필"}
+                    {t("lblSelectedAgentProfile")}
                   </span>
                   <Badge className="bg-green-700 hover:bg-green-700 text-white text-[10px]">{assignedAgent.agent_type === "llm" ? "LLM" : "하네스"}</Badge>
                 </div>
@@ -589,7 +550,7 @@ export default function CourseDetail() {
             ) : (
               <div className="text-center py-6 border border-dashed rounded-lg bg-zinc-50/30">
                 <p className="text-sm text-muted-foreground">
-                  {language === "en" ? "No tutor agent assigned. Please select one from the dropdown above." : "지정된 튜터 에이전트가 없습니다. 위에 있는 선택창에서 에이전트를 지정해주세요."}
+                  {t("lblNoTutorAssignedDesc")}
                 </p>
               </div>
             )}
@@ -606,10 +567,10 @@ export default function CourseDetail() {
           {pkg.toc && pkg.toc.length > 0 && (
             <div className="flex items-center gap-1.5">
               <Button variant="outline" size="sm" className="h-7 text-xs px-2.5" onClick={expandAllChapters}>
-                {language === "en" ? "Expand All" : "모두 펼치기"}
+                {t("lblExpandAll")}
               </Button>
               <Button variant="outline" size="sm" className="h-7 text-xs px-2.5" onClick={collapseAllChapters}>
-                {language === "en" ? "Collapse All" : "모두 접기"}
+                {t("lblCollapseAll")}
               </Button>
             </div>
           )}
@@ -653,11 +614,11 @@ export default function CourseDetail() {
                           <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-50">{item.title}</h4>
                           {isCompleted ? (
                             <Badge variant="default" className="bg-zinc-400 text-white text-[10px] px-1.5 py-0">
-                              {language === "en" ? "Completed" : "완료"}
+                              {t("completed")}
                             </Badge>
                           ) : isLocked ? (
                             <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
-                              {language === "en" ? "Locked" : "잠금"}
+                              {t("lblLocked")}
                             </Badge>
                           ) : isStarted ? (
                             <Badge variant="secondary" className="bg-green-700 text-white text-[10px] px-1.5 py-0">
@@ -665,7 +626,7 @@ export default function CourseDetail() {
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
-                              {language === "en" ? "Pending" : "대기 중"}
+                              {t("lblPending")}
                             </Badge>
                           )}
                         </div>
@@ -681,11 +642,11 @@ export default function CourseDetail() {
                             disabled={isLocked}
                             className={isCompleted ? "border-zinc-300 text-zinc-700 hover:bg-zinc-50 text-xs h-8" : "bg-green-700 hover:bg-green-700 text-white text-xs h-8"}
                           >
-                            {isCompleted ? (language === "en" ? "Review" : "다시 보기") : isStarted ? t("continueLearning") : language === "en" ? "Start Learn" : "학습 시작"}
+                            {isCompleted ? t("lblReview") : isStarted ? t("continueLearning") : t("lblStartLearn")}
                           </Button>
                         ) : (
                           <Button variant="secondary" size="sm" onClick={handleSubscribe} disabled={registering} className="border border-zinc-200 text-xs h-8">
-                            {language === "en" ? "Enroll Required" : "수강 필요"}
+                            {t("lblEnrollRequired")}
                           </Button>
                         )}
                       </div>
@@ -727,7 +688,7 @@ export default function CourseDetail() {
           </div>
         ) : (
           <div className="text-center py-12 border border-dashed rounded-lg bg-zinc-50/30">
-            <p className="text-sm text-muted-foreground">{language === "en" ? "No curriculum (TOC) registered." : "등록된 커리큘럼(TOC)이 없습니다."}</p>
+            <p className="text-sm text-muted-foreground">{t("lblNoCurriculum")}</p>
           </div>
         )}
       </div>
@@ -736,29 +697,29 @@ export default function CourseDetail() {
         <CardHeader className="pt-0 px-6 md:px-8">
           <CardTitle className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-green-700" />
-            {language === "en" ? "Version & Changelog" : "버전 및 변경 이력"}
+            {t("lblVersionChangelog")}
           </CardTitle>
           <CardDescription className="text-zinc-500 text-xs">
-            {language === "en" ? "The release version and update details of the current course." : "현재 강좌의 릴리즈 버전 정보와 업데이트 세부 내용입니다."}
+            {t("lblVersionChangelogDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-2 md:pt-4 pb-6 px-6 md:px-8 space-y-4">
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{language === "en" ? "Current Version:" : "현재 버전:"}</span>
+              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{t("lblCurrentVersionPrefix")}</span>
               <Badge className="bg-green-700 text-white dark:bg-green-950 dark:text-green-300 font-mono border-none">v{pkg.version || "1.0.0"}</Badge>
             </div>
             {pkg.created_at && (
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{language === "en" ? "Registered:" : "등록일:"}</span>
+                <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{t("lblRegisteredPrefix")}</span>
                 <span className="text-sm text-zinc-600 dark:text-zinc-400">{new Date(pkg.created_at).toLocaleDateString()}</span>
               </div>
             )}
           </div>
           <div className="p-4 rounded-lg bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
-            <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 mb-2">{language === "en" ? "Changelog" : "변경 사항 (Change Log)"}</p>
+            <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 mb-2">{t("lblChangelogTitle")}</p>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap leading-relaxed">
-              {pkg.changelog || (language === "en" ? "Initial registration." : "최초 등록되었습니다.")}
+              {pkg.changelog || t("lblInitialRegistration")}
             </p>
           </div>
         </CardContent>
@@ -768,10 +729,10 @@ export default function CourseDetail() {
         <CardHeader className="pt-0 px-6 md:px-8">
           <CardTitle className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
             <span className="w-5 h-5 flex items-center justify-center font-bold text-base text-green-700">©</span>
-            {language === "en" ? "License Information" : "라이선스 정보"}
+            {t("lblLicenseInfoTitle")}
           </CardTitle>
           <CardDescription className="text-zinc-500 text-xs">
-            {language === "en" ? "License terms and resource attribution for this course." : "이 강좌에 적용된 라이선스 약관 및 제3자 리소스 정보입니다."}
+            {t("lblLicenseInfoDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-2 md:pt-4 pb-6 px-6 md:px-8 space-y-4">
@@ -784,58 +745,30 @@ export default function CourseDetail() {
 
           <div className="p-4 rounded-lg bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 space-y-3">
             <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider">
-              {language === "en" ? "License Terms Description" : "라이선스 조건 설명"}
+              {t("lblLicenseTermsDesc")}
             </p>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
               {(() => {
                 const lic = pkg.license || "CC-BY-NC-4.0";
-                switch (lic) {
-                  case "CC-BY-4.0":
-                    return language === "en"
-                      ? "Creative Commons Attribution 4.0: You are free to share and adapt the material for any purpose, even commercially, as long as you give appropriate credit."
-                      : "크리에이티브 커먼즈 저작자표시 4.0: 적절한 출처를 표시하는 한, 상업적 이용 및 변경, 재배포가 자유롭게 허용됩니다.";
-                  case "CC-BY-SA-4.0":
-                    return language === "en"
-                      ? "Creative Commons Attribution-ShareAlike 4.0: You can share and adapt, but must distribute your contributions under the same license."
-                      : "크리에이티브 커먼즈 저작자표시-동일조건변경허락 4.0: 출처 표시가 필요하며, 2차 저작물 역시 동일한 라이선스로 배포해야 합니다.";
-                  case "CC-BY-NC-4.0":
-                    return language === "en"
-                      ? "Creative Commons Attribution-NonCommercial 4.0: You may share and adapt for non-commercial purposes only."
-                      : "크리에이티브 커먼즈 저작자표시-비영리 4.0: 저작자 표시가 필요하며, 비영리 목적으로만 사용이 허용됩니다.";
-                  case "CC-BY-NC-SA-4.0":
-                    return language === "en"
-                      ? "Creative Commons Attribution-NonCommercial-ShareAlike 4.0: You may share and adapt for non-commercial purposes under the same license."
-                      : "크리에이티브 커먼즈 저작자표시-비영리-동일조건변경허락 4.0: 비영리 목적으로만 사용 가능하며, 동일 라이선스로 2차 배포해야 합니다.";
-                  case "CC-BY-ND-4.0":
-                    return language === "en"
-                      ? "Creative Commons Attribution-NoDerivatives 4.0: You may share the material, but cannot distribute modified versions."
-                      : "크리에이티브 커먼즈 저작자표시-변경금지 4.0: 원본 그대로 공유하는 것만 가능하며, 가공 및 변경된 2차 저작물의 배포는 불가능합니다.";
-                  case "CC-BY-NC-ND-4.0":
-                    return language === "en"
-                      ? "Creative Commons Attribution-NonCommercial-NoDerivatives 4.0: The most restrictive CC license, allowing only non-commercial sharing of the original."
-                      : "크리에이티브 커먼즈 저작자표시-비영리-변경금지 4.0: 비영리 목적으로 원본 그대로 공유하는 것만 허용되는 가장 제한적인 CC 라이선스입니다.";
-                  case "CC0-1.0":
-                    return language === "en"
-                      ? "CC0 1.0 Universal: Public domain dedication. The creator has waived all copyright claims."
-                      : "CC0 1.0 퍼블릭 도메인: 저작권자가 모든 권리를 포기하여 누구나 제한 없이 자유롭게 활용할 수 있는 퍼블릭 도메인 저작물입니다.";
-                  case "custom":
-                    return language === "en"
-                      ? "Custom License: The course creator has provided a custom license file. Please review the LICENSE file for details."
-                      : "커스텀 라이선스: 제작자가 정의한 개별 라이선스 조건이 적용됩니다. 상세 내용은 첨부된 라이선스 파일을 참조해 주세요.";
-                  case "all-rights-reserved":
-                  default:
-                    return language === "en"
-                      ? "All Rights Reserved: Reproduction, distribution, or modification of this course content is strictly prohibited."
-                      : "모든 권리 보유: 이 강좌 콘텐츠의 무단 복제, 배포 및 변경이 엄격히 금지됩니다.";
-                }
+                 const keys: Record<string, TranslationKeys> = {
+                  "CC-BY-4.0": "descLicenseBY40",
+                  "CC-BY-SA-4.0": "descLicenseBYSA40",
+                  "CC-BY-NC-4.0": "descLicenseBYNC40",
+                  "CC-BY-NC-SA-4.0": "descLicenseBYNCSA40",
+                  "CC-BY-ND-4.0": "descLicenseBYND40",
+                  "CC-BY-NC-ND-4.0": "descLicenseBYNCND40",
+                  "CC0-1.0": "descLicenseCC010",
+                  "custom": "descLicenseCustom",
+                };
+                return t(keys[lic] ?? "descLicenseARR");
               })()}
             </p>
 
             {pkg.license_file && (
               <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between flex-wrap gap-2 text-xs">
                 <span className="text-zinc-500">
-                  {language === "en" ? "License Document: " : "라이선스 문서: "}
-                  <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-green-700 dark:text-green-300 font-mono">{pkg.license_file}</code>
+                  {t("lblLicenseDocPrefix")}
+                  <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 dark:text-zinc-400 rounded text-green-700 dark:text-green-300 font-mono">{pkg.license_file}</code>
                 </span>
                 {(() => {
                   const lic = pkg.license || "CC-BY-NC-4.0";
@@ -849,7 +782,7 @@ export default function CourseDetail() {
                       rel="noopener noreferrer"
                       className="text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 font-semibold underline"
                     >
-                      {language === "en" ? "View Document" : "문서 보기"}
+                      {t("lblViewDocument")}
                     </a>
                   );
                 })()}

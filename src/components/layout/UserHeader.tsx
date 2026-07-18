@@ -12,8 +12,7 @@ export function UserHeader() {
   const navigate = useNavigate();
   const isLearnPage = pathname.includes("/learn/");
   const { layout, setLayout } = useLearnLayout();
-  const { language } = useLanguage();
-  const isEnglish = language === "en";
+  const { t } = useLanguage();
 
   return (
     <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center border-b bg-background px-6">
@@ -31,7 +30,7 @@ export function UserHeader() {
               className="h-8 px-2.5 gap-1.5 text-xs font-medium transition-all duration-200"
             >
               <Columns3 className="h-4 w-4 text-muted-foreground" />
-              <span className="hidden sm:inline">{isEnglish ? "3-Column" : "3단 보기"}</span>
+              <span className="hidden sm:inline">{t("layout3Col")}</span>
             </Button>
             <Button
               variant={layout === "content-tutor" ? "secondary" : "ghost"}
@@ -40,7 +39,7 @@ export function UserHeader() {
               className="h-8 px-2.5 gap-1.5 text-xs font-medium transition-all duration-200"
             >
               <Columns2 className="h-4 w-4 text-muted-foreground rotate-180" />
-              <span className="hidden sm:inline">{isEnglish ? "Content + Tutor" : "본문 + 튜터"}</span>
+              <span className="hidden sm:inline">{t("layoutContentTutor")}</span>
             </Button>
             <Button
               variant={layout === "toc-content" ? "secondary" : "ghost"}
@@ -49,7 +48,7 @@ export function UserHeader() {
               className="h-8 px-2.5 gap-1.5 text-xs font-medium transition-all duration-200"
             >
               <Columns2 className="h-4 w-4 text-muted-foreground" />
-              <span className="hidden sm:inline">{isEnglish ? "TOC + Content" : "목차 + 본문"}</span>
+              <span className="hidden sm:inline">{t("layoutTocContent")}</span>
             </Button>
             <Button
               variant={layout === "content-only" ? "secondary" : "ghost"}
@@ -58,7 +57,7 @@ export function UserHeader() {
               className="h-8 px-2.5 gap-1.5 text-xs font-medium transition-all duration-200"
             >
               <Layout className="h-4 w-4 text-muted-foreground" />
-              <span className="hidden sm:inline">{isEnglish ? "Content Only" : "본문만"}</span>
+              <span className="hidden sm:inline">{t("layoutContentOnly")}</span>
             </Button>
           </div>
         )}
@@ -73,7 +72,7 @@ export function UserHeader() {
             className="gap-1.5 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            {isEnglish ? "Back" : "뒤로"}
+            {t("btnBack")}
           </Button>
         ) : (
           // Desktop app is single-user — no auth, so just a static profile link.

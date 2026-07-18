@@ -13,7 +13,7 @@ import { db, LOCAL_USER_ID } from "@/lib/db/client";
 import { importCourseBundle } from "@/lib/bundle/client";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import type { TocNode } from "@/lib/types/course";
-import { countChapters, isVersionNewer, countCardsFromToc } from "@/lib/utils/course";
+import { countChapters, isVersionNewer, countCardsFromToc, formatTargetAge } from "@/lib/utils/course";
 
 const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/";
 const GITHUB_REPO_URL = "https://github.com/godstale/OpenTutorials-Browser";
@@ -138,7 +138,7 @@ export default function Courses() {
 
       await fetchCoursesAndSubs();
     } catch (err: any) {
-      alert(`수강 신청 중 오류가 발생했습니다: ${err.message}`);
+      alert(t("errEnrollFailed") + err.message);
     }
   };
 
@@ -148,13 +148,13 @@ export default function Courses() {
     setInstallingSlug(onlineCourse.slug);
     try {
       let downloadUrl = onlineCourse.downloadUrl;
-      if (!downloadUrl) throw new Error(language === "en" ? "This course has no download URL." : "이 강좌에는 다운로드 주소가 없습니다.");
+      if (!downloadUrl) throw new Error(t("errNoDownloadUrl"));
       if (!downloadUrl.startsWith("http://") && !downloadUrl.startsWith("https://")) {
         downloadUrl = `${GITHUB_RAW_BASE}${downloadUrl}`;
       }
 
       const res = await fetch(downloadUrl);
-      if (!res.ok) throw new Error(language === "en" ? "Failed to download the course ZIP file." : "강좌 ZIP 파일을 다운로드하지 못했습니다.");
+      if (!res.ok) throw new Error(t("lblDownloadZipFailed"));
       const zipBlob = await res.blob();
 
       const { data: pkg, error: importErr } = await importCourseBundle(zipBlob, "GITHUB");
@@ -163,11 +163,7 @@ export default function Courses() {
       await handleSubscribe(pkg.id);
     } catch (err: any) {
       console.error(err);
-      alert(
-        language === "en"
-          ? `An error occurred while installing the course: ${err.message}`
-          : `강좌 설치 중 오류가 발생했습니다: ${err.message}`,
-      );
+      alert(t("errInstallCourseFailed") + err.message);
     } finally {
       setInstallingSlug(null);
     }
@@ -397,13 +393,7 @@ export default function Courses() {
                     )}
                     {selectedCourse.target_age && (
                       <Badge variant="outline" className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                        {language === "en"
-                          ? selectedCourse.target_age === "all"
-                            ? "All Ages"
-                            : `${selectedCourse.target_age} years old`
-                          : selectedCourse.target_age === "all"
-                            ? "전연령"
-                            : `${selectedCourse.target_age}세`}
+                        {formatTargetAge(selectedCourse.target_age, t)}
                       </Badge>
                     )}
                   </div>
@@ -416,7 +406,7 @@ export default function Courses() {
                 {selectedCourse.author && (
                   <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800/80">
                     <h4 className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2.5">
-                      {language === "en" ? "Author Info" : "제작자 정보"}
+                      {t("lblAuthorInfo")}
                     </h4>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
@@ -522,9 +512,7 @@ export default function Courses() {
                         {t("courseCurriculum")}
                       </h4>
                       <p className="bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 text-center text-zinc-400 dark:text-zinc-500 text-[11px]">
-                        {language === "en"
-                          ? "This course is not installed locally. Download it to view the detailed table of contents."
-                          : "로컬에 설치되지 않은 강좌입니다. 강좌를 다운로드하면 상세 목차를 확인하실 수 있습니다."}
+                        {t("lblCourseNotInstalled")}
                       </p>
                     </div>
                   );
@@ -532,27 +520,19 @@ export default function Courses() {
 
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div className="space-y-1.5">
-                    <span className="font-medium text-zinc-400 dark:text-zinc-500">{language === "en" ? "Sequence Rule" : "순차 수강 규정"}</span>
+                    <span className="font-medium text-zinc-400 dark:text-zinc-500">{t("lblSequenceRule")}</span>
                     <p className="text-zinc-800 dark:text-zinc-200 font-medium">
                       {selectedCourse.sequential_play
-                        ? language === "en"
-                          ? "Sequential required"
-                          : "순차 진행 필요"
-                        : language === "en"
-                          ? "Free exploration"
-                          : "자유로운 탐색"}
+                        ? t("lblSequenceRequired")
+                        : t("lblFreeExploration")}
                     </p>
                   </div>
                   <div className="space-y-1.5">
-                    <span className="font-medium text-zinc-400 dark:text-zinc-500">{language === "en" ? "Checkpoint Rule" : "체크포인트 규칙"}</span>
+                    <span className="font-medium text-zinc-400 dark:text-zinc-500">{t("lblCheckpointRule")}</span>
                     <p className="text-zinc-800 dark:text-zinc-200 font-medium">
                       {selectedCourse.force_checkpoint
-                        ? language === "en"
-                          ? "Checkpoint required"
-                          : "체크포인트 필수"
-                        : language === "en"
-                          ? "Self-guided/Recommended"
-                          : "자율 권장"}
+                        ? t("lblCheckpointRequired")
+                        : t("lblSelfGuidedRecommended")}
                     </p>
                   </div>
                   {selectedCourse.bundler_protocol_version && (
@@ -567,7 +547,7 @@ export default function Courses() {
                       {(() => {
                         const licenseKey = selectedCourse.license || "CC-BY-NC-4.0";
                         const licenseInfo = LICENSE_MAP[licenseKey] || { ko: licenseKey, en: licenseKey };
-                        const licenseText = language === "en" ? licenseInfo.en : licenseInfo.ko;
+                        const licenseText = licenseInfo[language];
                         return (
                           <>
                             <span>{licenseText}</span>
@@ -581,7 +561,7 @@ export default function Courses() {
                   </div>
                   {selectedCourse.tags && selectedCourse.tags.length > 0 && (
                     <div className="col-span-2 space-y-2 border-t pt-3 border-zinc-100 dark:border-zinc-800">
-                      <span className="font-medium text-zinc-400 dark:text-zinc-500">{language === "en" ? "Tags" : "태그"}</span>
+                      <span className="font-medium text-zinc-400 dark:text-zinc-500">{t("lblTags")}</span>
                       <div className="flex flex-wrap gap-1.5">
                         {selectedCourse.tags.map((tag: string) => (
                           <span key={tag} className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px]">
@@ -596,7 +576,7 @@ export default function Courses() {
 
               <div className="p-6 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/20 shrink-0">
                 <Button variant="ghost" onClick={() => setIsDetailOpen(false)} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-700">
-                  {language === "en" ? "Close" : "닫기"}
+                  {t("lblClose")}
                 </Button>
 
                 {(() => {
@@ -629,7 +609,7 @@ export default function Courses() {
                           setEnrollingSlug(null);
                         }}
                       >
-                        <span>{language === "en" ? "Enroll" : "수강 신청하기"}</span>
+                        <span>{t("btnEnroll")}</span>
                         <ArrowRight className="size-4" />
                       </Button>
                     );
@@ -646,7 +626,7 @@ export default function Courses() {
                       ) : (
                         <>
                           <Download className="size-4" />
-                          <span>{language === "en" ? "Install" : "설치"}</span>
+                          <span>{t("btnInstall")}</span>
                         </>
                       )}
                     </Button>

@@ -5,9 +5,11 @@ export function countChapters(toc?: TocNode[] | null): number {
   return toc.filter((node) => node.type === "chapter").length;
 }
 
-export function formatTargetAge(targetAge: string, language: string): string {
-  if (targetAge === "all") return language === "en" ? "All Ages" : "전연령";
-  return language === "en" ? `${targetAge} years old` : `${targetAge}세`;
+import type { TranslationKeys } from "@/lib/locales/ko";
+
+export function formatTargetAge(targetAge: string, t: (key: TranslationKeys) => string): string {
+  if (targetAge === "all") return t("ageAll");
+  return t("ageYearsOld").replace("{age}", targetAge);
 }
 
 export function isVersionNewer(local: string, online: string): boolean {
@@ -54,4 +56,25 @@ export function getChapterProgress(toc: TocNode[] | undefined | null, currentCar
     }
   }
   return { current: total, total };
+}
+
+export function formatTotalDuration(ms: number, t: (key: TranslationKeys) => string): string {
+  if (ms <= 0) return `0${t("unitSeconds")}`;
+  const totalSeconds = ms / 1000;
+  if (totalSeconds < 60) {
+    return `${totalSeconds.toFixed(1)}${t("unitSeconds")}`;
+  }
+  if (totalSeconds < 3600) {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = Math.round(totalSeconds % 60);
+    return `${minutes}${t("unitMinutes")} ${seconds}${t("unitSeconds")}`;
+  }
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  return `${hours}${t("unitHours")} ${minutes}${t("unitMinutes")}`;
+}
+
+export function formatAvgResponse(ms: number, t: (key: TranslationKeys) => string): string {
+  if (ms <= 0) return `0${t("unitSeconds")}`;
+  return `${(ms / 1000).toFixed(1)}${t("unitSeconds")}`;
 }

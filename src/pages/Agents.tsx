@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AddAgentModal } from "@/components/features/AddAgentModal";
 import { getExternalAgents, deleteExternalAgent, updateExternalAgent } from "@/lib/api/external-agents";
+import { formatTotalDuration, formatAvgResponse } from "@/lib/utils/course";
 import { testAgentConnection, getAgentChatLogs, type AgentChatLog } from "@/lib/agent/client";
 import type { UserExternalAgent } from "@/lib/types";
 import { db } from "@/lib/db/client";
@@ -80,7 +81,7 @@ interface OverallStatisticsProps {
 }
 
 function OverallStatistics({ chatLogs, isLoading, agentsCount, onlineAgentsCount, assignedCoursesCount }: OverallStatisticsProps) {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
@@ -92,28 +93,9 @@ function OverallStatistics({ chatLogs, isLoading, agentsCount, onlineAgentsCount
   const avgMs = totalLogs > 0 ? totalMs / totalLogs : 0;
   const avgTokens = totalLogs > 0 ? Math.round(totalTokens / totalLogs) : 0;
 
-  const formatTotalDuration = (ms: number) => {
-    if (ms <= 0) return language === "en" ? "0s" : "0초";
-    const totalSeconds = ms / 1000;
-    if (totalSeconds < 60) return language === "en" ? `${totalSeconds.toFixed(1)}s` : `${totalSeconds.toFixed(1)}초`;
-    if (totalSeconds < 3600) {
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = Math.round(totalSeconds % 60);
-      return language === "en" ? `${minutes}m ${seconds}s` : `${minutes}분 ${seconds}초`;
-    }
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    return language === "en" ? `${hours}h ${minutes}m` : `${hours}시간 ${minutes}분`;
-  };
-
-  const formatAvgResponse = (ms: number) => {
-    if (ms <= 0) return language === "en" ? "0s" : "0초";
-    return language === "en" ? `${(ms / 1000).toFixed(1)}s` : `${(ms / 1000).toFixed(1)}초`;
-  };
-
   const stats = {
-    totalHours: formatTotalDuration(totalMs),
-    avgResponse: formatAvgResponse(avgMs),
+    totalHours: formatTotalDuration(totalMs, t),
+    avgResponse: formatAvgResponse(avgMs, t),
     totalTokens: `${totalTokens.toLocaleString()} ${t("agentStatsTokenUnit")}`,
     avgTokens: `${avgTokens.toLocaleString()} ${t("agentStatsTokenUnit")}`,
   };
@@ -143,7 +125,7 @@ function OverallStatistics({ chatLogs, isLoading, agentsCount, onlineAgentsCount
 
   const yearMonthLabel = t("agentStatsYearMonthFmt").replace("{year}", String(viewYear)).replace("{month}", String(viewMonth + 1));
 
-  const timeTooltipFormatter = (value: any) => [`${parseFloat(value).toFixed(1)}${language === "en" ? "m" : "분"}`, t("agentStatsTimeTooltip")];
+  const timeTooltipFormatter = (value: any) => [`${parseFloat(value).toFixed(1)}${t("unitMinutes")}`, t("agentStatsTimeTooltip")];
 
   const dayLabelFormatter = (day: any) => t("agentStatsDayFmt").replace("{month}", String(viewMonth + 1)).replace("{day}", String(day));
 
@@ -213,10 +195,10 @@ function OverallStatistics({ chatLogs, isLoading, agentsCount, onlineAgentsCount
             </span>
             <div className="mt-4 pt-3 border-t border-border w-full flex justify-between text-xs text-muted-foreground">
               <span>
-                {t("agentStatsTotalAgents")} <strong className="text-foreground">{agentsCount}{language === "ko" ? "개" : ""}</strong>
+                {t("agentStatsTotalAgents")} <strong className="text-foreground">{agentsCount}{t("lblEachUnit")}</strong>
               </span>
               <span>
-                {t("agentStatsOnline")} <strong className="text-emerald-500">{onlineAgentsCount}{language === "ko" ? "개" : ""}</strong>
+                {t("agentStatsOnline")} <strong className="text-emerald-500">{onlineAgentsCount}{t("lblEachUnit")}</strong>
               </span>
             </div>
           </CardContent>
@@ -281,7 +263,7 @@ function OverallStatistics({ chatLogs, isLoading, agentsCount, onlineAgentsCount
 export default function Agents() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const [agents, setAgents] = useState<UserExternalAgent[]>([]);
   const [courses, setCourses] = useState<CourseAgentLink[]>([]);
@@ -431,7 +413,6 @@ export default function Agents() {
   };
 
   const formatAssignedCourses = (count: number) => {
-    if (language === "en") return `${t("agentAssignedCourses")} (${count})`;
     return `${t("agentAssignedCourses")} (${count}${t("agentAssignedCoursesUnit")})`;
   };
 

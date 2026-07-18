@@ -385,7 +385,7 @@ export default function Learn() {
   const slug = rawSlug ? decodeURIComponent(rawSlug) : "";
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const { layout } = useLearnLayout();
   const { open: sidebarOpen, setOpen: setSidebarOpen } = useSidebar();
 
@@ -889,7 +889,7 @@ export default function Learn() {
       setPromptUsage(usagePercent);
     } catch (err: unknown) {
       console.error("Failed to chat with agent:", err);
-      const errorMessage = err instanceof Error ? err.message : language === "en" ? "Unknown error" : "알 수 없는 오류";
+      const errorMessage = err instanceof Error ? err.message : t("errUnknownError");
       setMessages((prev) =>
         prev.map((m) => (m.id === assistantMsgId ? { ...m, content: t("lblResponseError").replace("{error}", errorMessage) } : m)),
       );
@@ -1128,7 +1128,7 @@ Please ask the student the question now. Only ask the question itself, do not re
   if (loading) {
     return (
       <div className="p-8 text-center text-muted-foreground animate-pulse">
-        {language === "en" ? "Loading course..." : "강좌를 불러오는 중..."}
+        {t("lblLoadingCourse")}
       </div>
     );
   }
@@ -1136,9 +1136,7 @@ Please ask the student the question now. Only ask the question itself, do not re
   if (notFound || !course) {
     return (
       <div className="p-8 text-center text-muted-foreground">
-        {language === "en"
-          ? "Course not found. Please check the course slug."
-          : "강좌를 찾을 수 없습니다. 입력하신 강좌 슬러그가 올바른지 확인해주세요."}
+        {t("errCourseNotFound")}
       </div>
     );
   }
@@ -1153,17 +1151,18 @@ Please ask the student the question now. Only ask the question itself, do not re
         <div style={{ width: `${tocWidth}px` }} className="bg-background flex flex-col h-full shrink-0 min-h-0 relative">
           <div className="p-4 border-b shrink-0 flex items-center justify-between">
             <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-primary" /> {language === "en" ? "Curriculum" : "강좌 커리큘럼"}
+              <BookOpen className="w-4 h-4 text-primary" /> {t("courseCurriculum")}
             </h3>
           </div>
 
           <div className="px-4 py-3 border-b bg-muted/20 shrink-0">
             <div className="flex justify-between items-center text-xs text-muted-foreground mb-1.5 font-medium">
-              <span>{language === "en" ? "Learning Progress" : "학습 현황"}</span>
+              <span>{t("lblLearningProgress")}</span>
               <span>
-                {language === "en"
-                  ? `Unlocked ${unlockedCount} / ${totalCards} (${Math.round((unlockedCount / totalCards) * 100)}%)`
-                  : `${unlockedCount} / ${totalCards} 해제 (${Math.round((unlockedCount / totalCards) * 100)}%)`}
+                {t("lblUnlockedProgress")
+                  .replace("{unlocked}", String(unlockedCount))
+                  .replace("{total}", String(totalCards))
+                  .replace("{percent}", String(Math.round((unlockedCount / totalCards) * 100)))}
               </span>
             </div>
             <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
@@ -1195,7 +1194,7 @@ Please ask the student the question now. Only ask the question itself, do not re
             <div className="absolute inset-0 z-20 bg-background flex flex-col">
               <div className="p-4 border-b shrink-0 flex items-center justify-between">
                 <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
-                  <Captions className="w-4 h-4 text-primary" /> {language === "en" ? "Subtitle Navigation" : "자막 탐색"}
+                  <Captions className="w-4 h-4 text-primary" /> {t("lblSubtitleNav")}
                 </h3>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsSubtitlePopupOpen(false)}>
                   <X className="w-4 h-4" />
@@ -1247,15 +1246,15 @@ Please ask the student the question now. Only ask the question itself, do not re
           <div className="flex items-center gap-4">
             <span className="text-sm bg-primary/10 text-primary px-2 py-1 rounded">Card {currentCardIndex + 1}</span>
             <h1 className="text-xl font-bold flex items-center gap-2">
-              {currentNode?.title || (language === "en" ? `Learning Content (Card ${currentCardIndex + 1})` : `학습 콘텐츠 (카드 ${currentCardIndex + 1})`)}
+              {currentNode?.title || t("lblLearningContentCard").replace("{cardIndex}", String(currentCardIndex + 1))}
               {isPreview && (
                 <Badge variant="destructive" className="bg-rose-500 hover:bg-rose-600 text-white font-semibold text-xs py-0.5 px-2 animate-pulse">
-                  {language === "en" ? "Preview Mode" : "미리보기 모드"}
+                  {t("lblPreviewMode")}
                 </Badge>
               )}
               {isReview && (
                 <Badge variant="secondary" className="text-xs py-0.5 px-2">
-                  {language === "en" ? "Review" : "복습"}
+                  {t("lblReview")}
                 </Badge>
               )}
               {isCheckpointMode && (
@@ -1268,7 +1267,7 @@ Please ask the student the question now. Only ask the question itself, do not re
           <div className="flex gap-2">
             {activeCard?.type === "video" && activeCardSubtitles.length > 0 && (
               <Button variant="outline" size="sm" onClick={() => setIsSubtitlePopupOpen(true)}>
-                <Captions className="w-4 h-4 mr-2" /> {language === "en" ? "Subtitle Navigation" : "자막 탐색"}
+                <Captions className="w-4 h-4 mr-2" /> {t("lblSubtitleNav")}
               </Button>
             )}
           </div>
@@ -1281,7 +1280,7 @@ Please ask the student the question now. Only ask the question itself, do not re
               <div className="prose dark:prose-invert max-w-none text-foreground dark:text-zinc-300 space-y-4">
                 {cardLoading || !activeCard ? (
                   <div className="text-muted-foreground text-sm animate-pulse">
-                    {language === "en" ? "Loading card..." : "카드를 불러오는 중..."}
+                    {t("lblLoadingCard")}
                   </div>
                 ) : activeCard.type === "video" ? (
                   activeCard.videoInfo?.video_id ? (
@@ -1305,7 +1304,7 @@ Please ask the student the question now. Only ask the question itself, do not re
                     </div>
                   ) : (
                     <div className="whitespace-pre-wrap text-destructive">
-                      {language === "en" ? "Failed to load video info." : "동영상 정보를 불러올 수 없습니다."}
+                      {t("errVideoLoadFailed")}
                     </div>
                   )
                 ) : (
@@ -1318,13 +1317,13 @@ Please ask the student the question now. Only ask the question itself, do not re
 
         <div className="h-16 shrink-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-6">
           <Button variant="outline" onClick={() => handleSelectCard(Math.max(0, currentCardIndex - 1))} disabled={currentCardIndex === 0}>
-            <ChevronLeft className="w-4 h-4 mr-2" /> {language === "en" ? "Prev" : "이전"}
+            <ChevronLeft className="w-4 h-4 mr-2" /> {t("btnPrev")}
           </Button>
           <span className="text-sm text-muted-foreground">
             {currentCardIndex + 1} / {totalCards}
           </span>
           <Button onClick={handleNext}>
-            {currentCardIndex < totalCards - 1 ? (language === "en" ? "Next" : "다음") : language === "en" ? "Complete" : "완료"}{" "}
+            {currentCardIndex < totalCards - 1 ? t("btnNext") : t("completed")}{" "}
             <ChevronRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
@@ -1533,7 +1532,7 @@ Please ask the student the question now. Only ask the question itself, do not re
                 }}
                 className="text-amber-700 hover:text-amber-800 dark:text-amber-300 hover:bg-amber-500/10 font-semibold text-xs"
               >
-                {language === "en" ? "Skip Checkpoint" : "체크포인트 건너뛰기"}
+                {t("btnSkipCheckpoint")}
               </Button>
             ) : (
               <div />
@@ -1554,7 +1553,7 @@ Please ask the student the question now. Only ask the question itself, do not re
                   }
                 }}
               >
-                {language === "en" ? "Start Q&A" : "QnA 시작하기"}
+                {t("btnStartQna")}
               </Button>
             </div>
           </DialogFooter>

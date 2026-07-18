@@ -1,3 +1,60 @@
+## [2026-07-18] refactor | 강좌 상세, 강좌 관리, 학습 화면, 프로필 설정의 language === "en" 하드코딩 다국어 조건문 분기 전면 제거 및 locales 동기화
+
+### 작업 내용
+- **하드코딩 다국어 분기 전수 제거**: 프로젝트 전체를 검색하여 `language === "en"` 분기를 통해 하드코딩된 문자열을 출력하던 부분들을 모두 `t()` 함수를 통한 번역 키 호출 구조로 리팩토링했습니다.
+- **적용 대상 페이지**:
+  - [CourseDetail.tsx](file:///C:/Workspace/Projects/OpenTutorials-Desktop/src/pages/CourseDetail.tsx): 강좌 하단부의 순차/체크포인트 메타 라벨, AI 튜터 설정/통계 타이틀, 튜터 미지정, 에이전트 상세 프로필 타이틀, TOC 챕터 완료/잠금/대기 배지, 학습하기/다시보기 버튼, 버전 및 라이선스 정보 카드의 조건문 설명 및 문서 보기 링크 다국어화.
+  - [CoursesManage.tsx](file:///C:/Workspace/Projects/OpenTutorials-Desktop/src/pages/CoursesManage.tsx): 강좌 파일 드롭/업로드 정보, 번들 검증 중/완료 상태 텍스트, 카드 및 챕터 메타 정보 레이블, 강좌 삭제 확인(Confirm) 및 에러 경고 텍스트 다국어화.
+  - [Learn.tsx](file:///C:/Workspace/Projects/OpenTutorials-Desktop/src/pages/Learn.tsx): 강좌 및 카드 불러오는 중 상태 메시지, 강좌 미설치/에러 메시지, 커리큘럼/자막 탐색 패널 타이틀, 학습 현황 진도(Unlocked Progress), 미리보기/복습 배지, 이전/다음/완료 제어 버튼, 체크포인트 스킵 및 QnA 시작 팝업 텍스트 다국어화.
+  - [SettingsProfile.tsx](file:///C:/Workspace/Projects/OpenTutorials-Desktop/src/pages/SettingsProfile.tsx): 프로필 저장 성공/실패 얼럿 메시지, 닉네임/이메일/홈페이지 설명 텍스트, 불러오는 중 상태 메시지 다국어화.
+- **번역 사전(locales) 동기화**: `src/lib/locales/ko.ts` 및 `src/lib/locales/en.ts` locales 사전에 위의 화면들에서 누락되었던 25개 이상의 다국어 번역 키를 1:1로 정확하게 정의하였습니다.
+- **TypeScript 미사용 변수 및 컴파일 검증**: 리팩토링 과정에서 `language` 미사용으로 발생한 미사용 변수 선언 경고(TS6133)를 제거하고 `npx tsc --noEmit` 검증을 완벽히 통과했습니다.
+
+### 변경된 파일
+- `src/lib/locales/ko.ts`
+- `src/lib/locales/en.ts`
+- `src/pages/CourseDetail.tsx`
+- `src/pages/CoursesManage.tsx`
+- `src/pages/Learn.tsx`
+- `src/pages/SettingsProfile.tsx`
+
+---
+
+## [2026-07-18] refactor | 하드코딩된 다국어 분기 조건 제거 및 다국어 번역 키 일관성 적용
+
+### 작업 내용
+- **다국어 하드코딩 분기 제거**: 프로젝트 곳곳에 남아있던 `language === "en" ? ... : ...` 형태의 하드코딩된 다국어 분기 코드를 모두 `t()` 함수 기반의 다국어 번역 키 호출로 리팩토링했습니다.
+- **번역 키 추가**: `ko.ts` 및 `en.ts` locales에 UI 레이블, 버튼, 시간 포맷, 연령 조건 및 상세 모달, 에러 alert/confirm 관련 신규 다국어 번역 키를 추가하여 두 locales 간의 일관성을 유지했습니다.
+- **시간 포맷 함수 공용화**: 각 컴포넌트(`AgentDetail.tsx`, `Agents.tsx`, `CourseDetail.tsx`)에서 개별적으로 중복 작성되어 다국어 분기를 수행하던 시간 포맷팅 헬퍼들을 `src/lib/utils/course.ts` 유틸리티의 `formatTotalDuration(ms, t)` 및 `formatAvgResponse(ms, t)` 공용 함수로 추출하여 `t()` 함수를 주입받아 포맷팅을 수행하도록 일관화했습니다.
+- **TypeScript 타입 검증**: 빌드 및 TypeScript 타입 검사(`npx tsc --noEmit`)를 통과하여 에러 없는 상태를 확인했습니다.
+
+### 변경된 파일
+- `src/lib/locales/ko.ts`
+- `src/lib/locales/en.ts`
+- `src/lib/utils/course.ts`
+- `src/components/features/CourseCard.tsx`
+- `src/components/layout/UserHeader.tsx`
+- `src/pages/ComingSoon.tsx`
+- `src/pages/Courses.tsx`
+- `src/pages/AgentDetail.tsx`
+- `src/pages/Agents.tsx`
+- `src/pages/CourseDetail.tsx`
+- `src/pages/SettingsAgent.tsx`
+
+---
+
+## [2026-07-18] fix | 외부 에이전트 요청 시 중복 Content-Type 헤더 제거 (Hermes API 에러 대응)
+
+### 작업 내용
+- **중복 Content-Type 헤더 오류 수정**: 외부 에이전트 API 호출 시, Rust 백엔드(`src-tauri/src/agent/mod.rs`)의 `build_chat_request`에서 수동으로 `Content-Type: application/json` 헤더를 설정해 반환하던 것을 삭제했습니다. `reqwest` 클라이언트의 `.json(&body)` 메소드가 자동으로 `Content-Type` 헤더를 붙여주기 때문에, 수동으로 기입된 헤더가 중복 전달되어 Hermes 등 일부 OpenAI 호환 API 서버에서 `Duplicate 'Content-Type' header found` 에러(400 Bad Request)를 뱉던 문제를 해결했습니다.
+- **WIKI 문서 업데이트**: HermesAgent 엔티티 위키(`wiki/entities/HermesAgent.md`)에 해당 트러블슈팅 내역을 추가 기록했습니다.
+
+### 변경된 파일
+- `src-tauri/src/agent/mod.rs`
+- `wiki/entities/HermesAgent.md`
+
+---
+
 ## [2026-07-17] feat | 원격 강좌 카드 메타 정보(챕터·카드·라이선스·연령) 동적 바인딩 및 프로토콜 분석
 
 ### 작업 내용
