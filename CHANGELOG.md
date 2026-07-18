@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.6] - 2026-07-18
+
+### Changed
+- 패키지 버전 범프 (`package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`) to `0.3.6`
+- 패치 적용을 위한 Tauri 데스크톱 앱 릴리즈 빌드 완료 (`OpenTutorials-v0.3.6.exe` 배포 파일 자동 빌드 및 Git 준비)
+
 ## [0.3.5] - 2026-07-18
 
 ### Added
