@@ -16,7 +16,15 @@ export async function getExternalAgentById(id: string): Promise<UserExternalAgen
 export async function createExternalAgent(
   agent: Omit<UserExternalAgent, "id" | "user_id" | "status" | "created_at" | "updated_at">,
 ): Promise<UserExternalAgent> {
-  if (agent.is_ai_tutor === true) {
+  const existing = await getExternalAgents();
+  const hasDefault = existing.some((a) => a.is_ai_tutor === true);
+
+  let isAiTutor = agent.is_ai_tutor;
+  if (!hasDefault) {
+    isAiTutor = true;
+  }
+
+  if (isAiTutor === true) {
     const { error: resetError } = await db
       .from("user_external_agents")
       .update({ is_ai_tutor: false, is_tutor_configured: false })
@@ -28,6 +36,7 @@ export async function createExternalAgent(
     .from("user_external_agents")
     .insert({
       ...agent,
+      is_ai_tutor: isAiTutor,
       user_id: LOCAL_USER_ID,
       status: "offline",
     })
@@ -42,6 +51,14 @@ export async function updateExternalAgent(
   id: string,
   updates: Partial<Omit<UserExternalAgent, "id" | "user_id" | "created_at" | "updated_at">>,
 ): Promise<void> {
+  if (updates.is_ai_tutor === false) {
+    const existing = await getExternalAgents();
+    const otherDefault = existing.filter((a) => a.id !== id && a.is_ai_tutor === true);
+    if (otherDefault.length === 0) {
+      throw new Error("At least one default tutor must be maintained.");
+    }
+  }
+
   if (updates.is_ai_tutor === true) {
     const { error: resetError } = await db
       .from("user_external_agents")
@@ -57,4 +74,12 @@ export async function updateExternalAgent(
 export async function deleteExternalAgent(id: string): Promise<void> {
   const { error } = await db.from("user_external_agents").delete().eq("id", id);
   if (error) throw new Error(`${error.message} (${error.code || ""})`);
+
+  const remaining = await getExternalAgents();
+  if (remaining.length > 0) {
+    const hasDefault = remaining.some((a) => a.is_ai_tutor === true);
+    if (!hasDefault) {
+      await updateExternalAgent(remaining[0].id, { is_ai_tutor: true });
+    }
+  }
 }

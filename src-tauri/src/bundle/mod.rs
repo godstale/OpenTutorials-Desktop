@@ -173,6 +173,32 @@ fn import_validated(state: &AppDbState, validated: &ValidatedBundle, source: &st
 
     let mut db = read_db(&state.db_path);
 
+    let default_agent_id = db
+        .get("user_external_agents")
+        .and_then(|v| v.as_array())
+        .and_then(|arr| {
+            arr.iter()
+                .find(|agent| agent.get("is_ai_tutor").and_then(|t| t.as_bool()).unwrap_or(false))
+                .and_then(|agent| agent.get("id").and_then(|id| id.as_str()))
+        });
+
+    let existing_agent_id = db
+        .get("course_packages")
+        .and_then(|v| v.as_array())
+        .and_then(|arr| {
+            arr.iter()
+                .find(|p| p.get("slug").and_then(|s| s.as_str()) == Some(&validated.slug))
+                .and_then(|p| p.get("agent_id").and_then(|id| id.as_str()))
+        });
+
+    let agent_id_val = if let Some(existing_id) = existing_agent_id {
+        JsonValue::String(existing_id.to_string())
+    } else if let Some(default_id) = default_agent_id {
+        JsonValue::String(default_id.to_string())
+    } else {
+        JsonValue::Null
+    };
+
     let package_data = json!({
         "slug": validated.slug,
         "title": validated.title,
@@ -197,6 +223,7 @@ fn import_validated(state: &AppDbState, validated: &ValidatedBundle, source: &st
         "source": source,
         "toc": validated.toc,
         "cards": validated.cards,
+        "agent_id": agent_id_val,
     });
 
     let package_query = SerializedQuery { table: "course_packages".to_string(), single: true, ..Default::default() };
