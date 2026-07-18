@@ -15,6 +15,7 @@ import { AgentSettingsTab } from "@/components/features/AgentSettingsTab";
 import { agentLeaveTimers, cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { ROUTES } from "@/lib/constants/routes";
+import { formatTotalDuration, formatAvgResponse } from "@/lib/utils/course";
 
 function toDailyBuckets(logs: AgentChatLog[]): Map<string, { ms: number; tokens: number }> {
   const map = new Map<string, { ms: number; tokens: number }>();
@@ -53,7 +54,7 @@ function buildMonthSeries(dailyBuckets: Map<string, { ms: number; tokens: number
 }
 
 function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent; coursesCount: number }) {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [chatLogs, setChatLogs] = useState<AgentChatLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const now = new Date();
@@ -85,30 +86,9 @@ function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent;
   const avgMs = totalLogs > 0 ? totalMs / totalLogs : 0;
   const avgTokens = totalLogs > 0 ? Math.round(totalTokens / totalLogs) : 0;
 
-  const formatTotalDuration = (ms: number) => {
-    if (ms <= 0) return language === "en" ? "0s" : "0초";
-    const totalSeconds = ms / 1000;
-    if (totalSeconds < 60) {
-      return language === "en" ? `${totalSeconds.toFixed(1)}s` : `${totalSeconds.toFixed(1)}초`;
-    }
-    if (totalSeconds < 3600) {
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = Math.round(totalSeconds % 60);
-      return language === "en" ? `${minutes}m ${seconds}s` : `${minutes}분 ${seconds}초`;
-    }
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    return language === "en" ? `${hours}h ${minutes}m` : `${hours}시간 ${minutes}분`;
-  };
-
-  const formatAvgResponse = (ms: number) => {
-    if (ms <= 0) return language === "en" ? "0s" : "0초";
-    return language === "en" ? `${(ms / 1000).toFixed(1)}s` : `${(ms / 1000).toFixed(1)}초`;
-  };
-
   const stats = {
-    totalHours: formatTotalDuration(totalMs),
-    avgResponse: formatAvgResponse(avgMs),
+    totalHours: formatTotalDuration(totalMs, t),
+    avgResponse: formatAvgResponse(avgMs, t),
     totalTokens: `${totalTokens.toLocaleString()} ${t("agentStatsTokenUnit")}`,
     avgTokens: `${avgTokens.toLocaleString()} ${t("agentStatsTokenUnit")}`,
   };
@@ -138,7 +118,7 @@ function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent;
 
   const yearMonthLabel = t("agentStatsYearMonthFmt").replace("{year}", String(viewYear)).replace("{month}", String(viewMonth + 1));
 
-  const timeTooltipFormatter = (value: any) => [`${parseFloat(value).toFixed(1)}${language === "en" ? "m" : "분"}`, t("agentStatsTimeTooltip")];
+  const timeTooltipFormatter = (value: any) => [`${parseFloat(value).toFixed(1)}${t("unitMinutes")}`, t("agentStatsTimeTooltip")];
 
   const dayLabelFormatter = (day: any) => t("agentStatsDayFmt").replace("{month}", String(viewMonth + 1)).replace("{day}", String(day));
 

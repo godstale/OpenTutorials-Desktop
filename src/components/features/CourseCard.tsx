@@ -112,15 +112,15 @@ export function CourseCard({
   hideMeta,
   hideEnrollmentLabel,
 }: CourseCardProps) {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const metaText = hideMeta
     ? ""
     : [
-        totalChapters != null ? (language === "en" ? `${totalChapters} ch` : `챕터 ${totalChapters}`) : null,
-        totalCards != null ? (language === "en" ? `${totalCards} cards` : `카드 ${totalCards}`) : null,
+        totalChapters != null ? t("lblMetaChapter").replace("{count}", String(totalChapters)) : null,
+        totalCards != null ? t("lblMetaCard").replace("{count}", String(totalCards)) : null,
         license || null,
-        targetAge ? formatTargetAge(targetAge, language) : null,
+        targetAge ? formatTargetAge(targetAge, t) : null,
       ]
         .filter(Boolean)
         .join(" · ");

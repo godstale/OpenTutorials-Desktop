@@ -498,7 +498,6 @@ fn build_chat_request(
                 body["system"] = JsonValue::String(sys);
             }
             let headers = vec![
-                ("Content-Type", "application/json".to_string()),
                 ("x-api-key", api_key.to_string()),
                 ("anthropic-version", "2023-06-01".to_string()),
             ];
@@ -506,14 +505,13 @@ fn build_chat_request(
         }
         "gemini" => {
             let headers = vec![
-                ("Content-Type", "application/json".to_string()),
                 ("Authorization", format!("Bearer {api_key}")),
             ];
             let body = json!({"model": target_model, "messages": messages, "stream": true});
             (format!("{}/openai/v1/chat/completions", endpoint.trim_end_matches('/')), headers, body)
         }
         _ => {
-            let mut headers = vec![("Content-Type", "application/json".to_string())];
+            let mut headers = Vec::new();
             if !api_key.is_empty() {
                 headers.push(("Authorization", format!("Bearer {api_key}")));
             }

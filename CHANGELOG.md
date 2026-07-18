@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.4] - 2026-07-18
+
+### Changed
+- 패키지 버전 범프 (`package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`) to `0.3.4`
+- 강좌 상세(`CourseDetail`), 강좌 관리(`CoursesManage`), 학습 화면(`Learn`), 프로필 설정(`SettingsProfile`)의 하드코딩 다국어 조건문 분기(`language === "en"`) 전면 제거 및 `t()` 다국어 번역 키 적용
+- locales 사전(`ko.ts`, `en.ts`)에 신규 번역 키 추가 및 중복 정의 제거
+- TS 미사용 변수 경고(TS6133) 수정 및 `npx tsc --noEmit` 컴파일 에러 해결
+
 ## [0.3.3] - 2026-07-17
 
 ### Added
