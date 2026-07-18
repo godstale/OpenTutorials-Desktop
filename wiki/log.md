@@ -1,3 +1,21 @@
+## [2026-07-18] feat | Tauri 로컬 빌드 후 자동 복사 및 Git 업로드 프로세스 구축
+
+### 작업 내용
+- **Tauri 빌드 래퍼 및 후처리 스크립트 작성 (`scripts/tauri-wrapper.cjs`, `scripts/post-build.cjs`)**:
+  - `pnpm tauri build` 명령이 성공하면 자동으로 실행 파일 복사 프로세스를 수행하는 래퍼(Wrapper) 스크립트를 구현했습니다.
+  - 빌드 성공 시 `src-tauri/target/release/desktop.exe` 바이너리를 `package.json`에 기재된 앱 버전을 동적으로 가져와 `release/OpenTutorials-v[버전].exe`로 복사 및 이름을 변경하도록 후처리 스크립트를 구축했습니다.
+  - 복사가 완료되면 깃허브 레포지토리에 추적/업데이트될 수 있도록 `git add release/OpenTutorials-v[버전].exe` 명령을 후처리 단에서 자동 실행하여 Git 스테이징 영역에 즉시 반영되도록 고도화했습니다.
+- **CommonJS 호환성 및 스크립트 맵 연동**:
+  - 프로젝트 내 `"type": "module"` 선언으로 인한 `require` 에러를 방지하기 위해 후처리 관련 코드 확장자를 `.cjs`로 구성했습니다.
+  - `package.json`의 `"tauri"` 실행 스크립트가 해당 래퍼 스크립트를 경유하도록 경로 설정을 변경하여 사용자가 기존 개발 프로세스(`pnpm tauri build`, `pnpm tauri dev` 등)를 그대로 유지하더라도 빌드 후처리가 유기적으로 작동하도록 연동했습니다.
+
+### 변경된 파일
+- [package.json](file:///package.json)
+- [scripts/tauri-wrapper.cjs](file:///scripts/tauri-wrapper.cjs)
+- [scripts/post-build.cjs](file:///scripts/post-build.cjs)
+
+---
+
 ## [2026-07-18] release | OpenTutorials Desktop 빌드 자동화(GitHub Actions) 및 README.md 내 배포 가이드 보강
 
 ### 작업 내용
