@@ -405,7 +405,7 @@ export default function Learn() {
   const [tocWidth, setTocWidth] = useState<number>(256);
   const [tutorWidth, setTutorWidth] = useState<number>(400);
   const [bypassCheckpointSetting, setBypassCheckpointSetting] = useState<boolean>(false);
-  const [maxTokens, setMaxTokens] = useState<string>("32k");
+  const [maxTokens, setMaxTokens] = useState<string>("16k");
   const [compressionThreshold, setCompressionThreshold] = useState<number>(70);
 
   const [cardCache, setCardCache] = useState<Map<string, LearnCard>>(new Map());

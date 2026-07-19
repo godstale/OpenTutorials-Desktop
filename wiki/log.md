@@ -1,3 +1,16 @@
+## [2026-07-19] fix | 에이전트 최대 토큰(maxTokens) 기본값 변경 (32k -> 16k)
+
+### 작업 내용
+- **최대 토큰 기본값 변경**:
+  - 로컬 LLM 환경에서 대화가 누적되어 16K 토큰을 초과할 때 발생하는 성능 저하 및 오류 발생 확률 증가 현상을 방지하기 위해, 에이전트의 최대 토큰(`maxTokens`) 기본값을 기존 `"32k"`에서 `"16k"`로 변경하였습니다.
+  - 학습 화면([Learn.tsx](file:///C:/Workspace/Projects/OpenTutorials-Desktop/src/pages/Learn.tsx)) 및 에이전트 설정 화면([SettingsAgent.tsx](file:///C:/Workspace/Projects/OpenTutorials-Desktop/src/pages/SettingsAgent.tsx))의 기본 상태(useState) 값을 수정했습니다.
+
+### 변경된 파일
+- `src/pages/Learn.tsx`
+- `src/pages/SettingsAgent.tsx`
+
+---
+
 ## [2026-07-18] release | v0.3.6 버전 릴리즈 처리 및 패치 빌드 적용
 
 ### 작업 내용
