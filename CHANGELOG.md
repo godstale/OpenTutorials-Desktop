@@ -2,7 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.3.6] - 2026-07-18
+## [0.3.6] - 2026-07-19
+
+### Added
+- 에이전트 최대 토큰(`maxTokens`) 기본값을 32k에서 16k로 변경 (로컬 LLM 환경에서의 컨텍스트 오버플로우 방지 및 안정성 확보)
 
 ### Changed
 - 패키지 버전 범프 (`package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`) to `0.3.6`

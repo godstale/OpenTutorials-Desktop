@@ -10,7 +10,7 @@ const COMPRESSION_THRESHOLD_KEY = "open-tutorials-agent-compression-threshold";
 
 export default function SettingsAgent() {
   const { t } = useLanguage();
-  const [maxTokens, setMaxTokens] = useState("32k");
+  const [maxTokens, setMaxTokens] = useState("16k");
   const [compressionThreshold, setCompressionThreshold] = useState(70);
   const [savedMessage, setSavedMessage] = useState("");
 
